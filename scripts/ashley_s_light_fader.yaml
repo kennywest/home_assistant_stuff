@@ -518,12 +518,14 @@ sequence:
         data:
           brightness: "{{ expectedBrightness }}"
         action: light.turn_on
+        continue_on_error: true
     else:
       - target:
           entity_id: "{{ light }}"
         data:
           brightness_pct: "{{ expectedBrightness }}"
         action: light.turn_on
+        continue_on_error: true
   - variables:
       processingDelayInMilliseconds: "{{ (as_timestamp(now()) -  timestampBeforeServiceCall) * 1000 }}"
       easingType: |
@@ -1032,6 +1034,7 @@ sequence:
                             kelvin: "{{ expectedColorTemperature }}"
                             transition: "{{ transitionTimeParameterInSeconds | float(0)  }}"
                           action: light.turn_on
+                          continue_on_error: true
                       else:
                         - target:
                             entity_id: "{{ light }}"
@@ -1040,6 +1043,7 @@ sequence:
                             kelvin: "{{ expectedColorTemperature }}"
                             transition: "{{ transitionTimeParameterInSeconds | float(0) }}"
                           action: light.turn_on
+                          continue_on_error: true
                   else:
                     - if:
                         - condition: template
@@ -1052,6 +1056,7 @@ sequence:
                             brightness: "{{ expectedBrightness }}"
                             kelvin: "{{ expectedColorTemperature }}"
                           action: light.turn_on
+                          continue_on_error: true
                       else:
                         - target:
                             entity_id: "{{ light }}"
@@ -1059,6 +1064,7 @@ sequence:
                             brightness_pct: "{{ expectedBrightness }}"
                             kelvin: "{{ expectedColorTemperature }}"
                           action: light.turn_on
+                          continue_on_error: true
                 - if:
                     - condition: template
                       value_template: |
@@ -1111,6 +1117,7 @@ sequence:
                             brightness: "{{ expectedBrightness }}"
                             transition: "{{ transitionTimeParameterInSeconds }}"
                           action: light.turn_on
+                          continue_on_error: true
                       else:
                         - target:
                             entity_id: "{{ light }}"
@@ -1118,6 +1125,7 @@ sequence:
                             brightness_pct: "{{ expectedBrightness }}"
                             transition: "{{ transitionTimeParameterInSeconds }}"
                           action: light.turn_on
+                          continue_on_error: true
                   else:
                     - if:
                         - condition: template
@@ -1129,12 +1137,14 @@ sequence:
                           data:
                             brightness: "{{ expectedBrightness }}"
                           action: light.turn_on
+                          continue_on_error: true
                       else:
                         - target:
                             entity_id: "{{ light }}"
                           data:
                             brightness_pct: "{{ expectedBrightness }}"
                           action: light.turn_on
+                          continue_on_error: true
                 - if:
                     - condition: template
                       value_template: |
@@ -1173,12 +1183,14 @@ sequence:
                             kelvin: "{{ expectedColorTemperature }}"
                             transition: "{{ transitionTimeParameterInSeconds | round(3) }}"
                           action: light.turn_on
+                          continue_on_error: true
                       else:
                         - target:
                             entity_id: "{{ light }}"
                           data:
                             kelvin: "{{ expectedColorTemperature }}"
                           action: light.turn_on
+                          continue_on_error: true
                     - if:
                         - condition: template
                           value_template: |
@@ -1405,6 +1417,7 @@ sequence:
                   brightness: "{{ endBrightness }}"
                   kelvin: "{{ endColorTemperature }}"
                 action: light.turn_on
+                continue_on_error: true
             else:
               - target:
                   entity_id: "{{ light }}"
@@ -1412,6 +1425,7 @@ sequence:
                   brightness_pct: "{{ endBrightness }}"
                   kelvin: "{{ endColorTemperature }}"
                 action: light.turn_on
+                continue_on_error: true
         else:
           - if:
               - condition: template
@@ -1429,12 +1443,14 @@ sequence:
                     data:
                       brightness: "{{ endBrightness }}"
                     action: light.turn_on
+                    continue_on_error: true
                 else:
                   - target:
                       entity_id: "{{ light }}"
                     data:
                       brightness_pct: "{{ endBrightness }}"
                     action: light.turn_on
+                    continue_on_error: true
             else:
               - if:
                   - condition: template
@@ -1447,6 +1463,7 @@ sequence:
                     data:
                       kelvin: "{{ endColorTemperature }}"
                     action: light.turn_on
+                    continue_on_error: true
       - if:
           - condition: template
             value_template: |
