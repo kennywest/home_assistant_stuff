@@ -290,8 +290,7 @@ sequence:
       lightFriendlyName: "{{ state_attr(light, 'friendly_name') }}"
       startTimestamp: "{{ as_timestamp(now()) }}"
       fadeTimeInSeconds: >
-        {{ ((transitionTime.hours | int) * 60 * 60) + ((transitionTime.minutes |
-        int) * 60) + (transitionTime.seconds | int) }}
+        {{ ((transitionTime.hours | int(0)) * 60 * 60) + ((transitionTime.minutes | int(0)) * 60) + (transitionTime.seconds | int(0)) }}
       endTimestamp: "{{ startTimestamp + fadeTimeInSeconds }}"
       fadeTimeInMilliseconds: "{{ fadeTimeInSeconds * 1000 }}"
       shouldIgnoreTheEndBrightnessValueAndUseAnEntityForTheEndBrightnessInstead: >
@@ -316,7 +315,7 @@ sequence:
         {% endif %}
       isStopEntityToggleable: |
         {% if isStopEntityEnabled %}
-          {% set stopEntityDomain = states[stopEntity].domain %}
+          {% set stopEntityDomain = stopEntity.split('.')[0] %}
           {% if stopEntityDomain == "binary_sensor" %}
             {{ false }}
           {% else %}
@@ -338,7 +337,7 @@ sequence:
         {% set minColorTemperatureValue = state_attr(light,
         'min_color_temp_kelvin') %} {% if minColorTemperatureValue %}
           {% if is_number(minColorTemperatureValue) %}
-            {% set minColorTemperature = minColorTemperatureValue | int %}
+            {% set minColorTemperature = minColorTemperatureValue | int(0) %}
           {% endif %}
         {% endif %} {{ minColorTemperature }}
       maxColorTemperatureKelvin: >
@@ -347,18 +346,18 @@ sequence:
         {% set maxColorTemperatureValue = state_attr(light,
         'max_color_temp_kelvin') %} {% if maxColorTemperatureValue %}
           {% if is_number(maxColorTemperatureValue) %}
-            {% set maxColorTemperature = maxColorTemperatureValue | int %}
+            {% set maxColorTemperature = maxColorTemperatureValue | int(0) %}
           {% endif %}
         {% endif %} {{ maxColorTemperature }}
       doesLampSupportColorTemperatureKelvin: |
-        {% if ((minColorTemperatureKelvin | int) > 0) and
-        ((maxColorTemperatureKelvin | int)) > 0 %}
+        {% if ((minColorTemperatureKelvin | int(0)) > 0) and
+        ((maxColorTemperatureKelvin | int(0))) > 0 %}
           {{ true }}
         {% else %}
           {{ false }}
         {% endif %}
       doesLampSupportTransitions: >+
-        {% set supportedFeatures = state_attr(light, 'supported_features') | int
+        {% set supportedFeatures = state_attr(light, 'supported_features') | int(0)
         %}
 
         {## Bitfield of features supported by the light entity ##} {##
@@ -370,11 +369,7 @@ sequence:
         https://github.com/home-assistant/core/blob/787faaa508cf83ca4f850ee7000ad17eade915aa/homeassistant/components/light/__init__.py#L39
         ##}
 
-        {% if supportedFeatures >= 128 %}
-          {% set supportedFeatures = supportedFeatures - 128 %}
-        {% endif %}
-
-        {% if supportedFeatures >= 32 %}
+        {% if (supportedFeatures // 32) % 2 == 1 %}
           {{ true }}
         {% else %}
           {{ false }}
@@ -386,18 +381,18 @@ sequence:
         shouldIgnoreTheEndColorTemperatureValueAndUseAnEntityForTheEndColorTemperatureInstead
 
         %}
-          {% set entityColorTemperatureValue = states(endColorTemperatureKelvinEntity) | round (0) %}
+          {% set entityColorTemperatureValue = states(endColorTemperatureKelvinEntity) | float(0) | round(0) %}
 
-          {% set endColorTemperatureKelvinValue = entityColorTemperatureValue | int %}
+          {% set endColorTemperatureKelvinValue = entityColorTemperatureValue | int(0) %}
 
-          {% if endColorTemperatureKelvinValue > (maxColorTemperatureKelvin | int
+          {% if endColorTemperatureKelvinValue > (maxColorTemperatureKelvin | int(0)
           ) %}
-            {% set endColorTemperatureKelvinValue = maxColorTemperatureKelvin |int %}
+            {% set endColorTemperatureKelvinValue = maxColorTemperatureKelvin | int(0) %}
           {% endif %}
 
-          {% if endColorTemperatureKelvinValue < (minColorTemperatureKelvin | int
+          {% if endColorTemperatureKelvinValue < (minColorTemperatureKelvin | int(0)
           )%}
-            {% set endColorTemperatureKelvinValue = minColorTemperatureKelvin | int %}
+            {% set endColorTemperatureKelvinValue = minColorTemperatureKelvin | int(0) %}
           {% endif %}
 
         {% else %}
@@ -414,14 +409,14 @@ sequence:
 
         {{ endColorTemperatureKelvinValue }}
       isColorFadeRequested: |
-        {% if (endColorTemperature |int) > 0 %}
+        {% if (endColorTemperature | int(0)) > 0 %}
           {{ true }}
         {% else %}
           {{ false }}
         {% endif %}
       endBrightness: |
         {% if shouldIgnoreTheEndBrightnessValueAndUseAnEntityForTheEndBrightnessInstead %}
-          {% set entityBrightnessValue = states(endBrightnessEntity) | round (0) %}
+          {% set entityBrightnessValue = states(endBrightnessEntity) | float(0) | round(0) %}
           {% if (endBrightnessEntityScale == lampBrightnessScale) %}
             {% set endBrightness = entityBrightnessValue %}
           {% elif (lampBrightnessScale == "zeroToTwoFiftyFive") and (endBrightnessEntityScale == "zeroToOneHundred") %}
@@ -452,7 +447,7 @@ sequence:
         
         {## If a light is off, its brightness will return "None"? So first check if there's a valid brightness before setting the value ##}
         {% if rawLightLevel %}
-        	{% set currentLightLevel = rawLightLevel | int %}
+        	{% set currentLightLevel = rawLightLevel | int(0) %}
         {% else %}
         	{% set currentLightLevel = 0 %}
         {% endif %}
@@ -531,7 +526,7 @@ sequence:
                 value_template: |
                   {{ isDebugMode }}
             then:
-              - data_template:
+              - data:
                   message: |
                     {{ stopMessage }}
                   level: warning
@@ -549,7 +544,7 @@ sequence:
                 value_template: |
                   {{ isDebugMode }}
             then:
-              - data_template:
+              - data:
                   message: |
                     {{ stopMessage }}
                   level: warning
@@ -617,7 +612,7 @@ sequence:
 
         {% if rawColorTemperature %}
           {% if is_number(rawColorTemperature) %}
-            {% set currentColorTemperature = rawColorTemperature | int %}
+            {% set currentColorTemperature = rawColorTemperature | int(0) %}
           {% endif %}
         {% endif %}
 
@@ -625,20 +620,20 @@ sequence:
 
       colorTemperatureSpan: |
         {% if doesLampSupportColorTemperatureKelvin %}
-          {{ (endColorTemperature | int) - (startColorTemperature | int) }}
+          {{ (endColorTemperature | int(0)) - (startColorTemperature | int(0)) }}
         {% else %}
           {{ 0 }}
         {% endif %}
-      absoluteColorTemperatureSpan: "{{ colorTemperatureSpan | int | abs }}"
+      absoluteColorTemperatureSpan: "{{ colorTemperatureSpan | int(0) | abs }}"
       isBrightnessFadeEnabled: |
-        {% if (absoluteBrightnessSpan | int) > 0 %}
+        {% if (absoluteBrightnessSpan | int(0)) > 0 %}
           {{ true }}
         {% else %}
           {{ false }}
         {% endif %}
       isColorFadeEnabled: >
         {% if isColorFadeRequested and doesLampSupportColorTemperatureKelvin and
-        ((absoluteColorTemperatureSpan | int) > 0) %}
+        ((absoluteColorTemperatureSpan | int(0)) > 0) %}
           {{ true }}
         {% else %}
           {{ false }}
@@ -709,9 +704,9 @@ sequence:
           {{ idealDelay }}
         {% endif %}
       delayInSeconds: |
-        {{ (delayInMilliseconds | int) / 1000 }}
+        {{ (delayInMilliseconds | int(0)) / 1000 }}
       transitionTimeParameterInSeconds: >
-        {% set transitionTimeParameterInSeconds = ((delayInSeconds | float) *
+        {% set transitionTimeParameterInSeconds = ((delayInSeconds | float(0)) *
         0.9) | round(3) %}
 
         {## set a ceiling on the transition time ##}
@@ -740,7 +735,7 @@ sequence:
   - if:
       - condition: template
         value_template: >
-          {{ ((absoluteBrightnessSpan | int) == 0) and not isColorFadeEnabled
+          {{ ((absoluteBrightnessSpan | int(0)) == 0) and not isColorFadeEnabled
           }}
     then:
       - variables:
@@ -753,7 +748,7 @@ sequence:
             value_template: |
               {{ isDebugMode }}
         then:
-          - data_template:
+          - data:
               message: |
                 {{ stopMessage }}
               level: warning
@@ -763,8 +758,8 @@ sequence:
   - if:
       - condition: template
         value_template: >
-          {{ ((absoluteBrightnessSpan | int) == 0) and
-          ((absoluteColorTemperatureSpan | int) == 0) and isColorFadeEnabled
+          {{ ((absoluteBrightnessSpan | int(0)) == 0) and
+          ((absoluteColorTemperatureSpan | int(0)) == 0) and isColorFadeEnabled
           }}
     then:
       - variables:
@@ -778,7 +773,7 @@ sequence:
             value_template: |
               {{ isDebugMode }}
         then:
-          - data_template:
+          - data:
               message: |
                 {{ stopMessage }}
               level: warning
@@ -805,7 +800,7 @@ sequence:
             value_template: |
               {{ isDebugMode }}
         then:
-          - data_template:
+          - data:
               message: |
                 {{ stopMessage }}
               level: warning
@@ -831,7 +826,7 @@ sequence:
             value_template: |
               {{ isDebugMode }}
         then:
-          - data_template:
+          - data:
               message: |
                 {{ stopMessage }}
               level: warning
@@ -848,38 +843,38 @@ sequence:
             value_template: |
               {{ isColorFadeEnabled }}
         then:
-          - data_template:
+          - data:
               message: >
-                {{ easingType }} easing type with {{ delayInMilliseconds | int
+                {{ easingType }} easing type with {{ delayInMilliseconds | int(0)
                 }} ms delay. remainingTimeInMilliseconds = {{
                 remainingTimeInMilliseconds | round(0) }},
                 absoluteColorTemperatureSpan = {{ absoluteColorTemperatureSpan
                 }}, and absoluteBrightnessSpan = {{ absoluteBrightnessSpan }}
               level: warning
             action: system_log.write
-          - data_template:
+          - data:
               message: >
                 startBrightness = {{ startBrightness }}, endBrightness = {{
                 endBrightness }}, startColorTemperature = {{
                 startColorTemperature }}, endColorTemperature = {{
                 endColorTemperature }}, and  processingDelayInMilliseconds = {{
-                processingDelayInMilliseconds | int }}
+                processingDelayInMilliseconds | int(0) }}
               level: warning
             action: system_log.write
         else:
-          - data_template:
+          - data:
               message: >
-                {{ easingType }} easing type with {{ delayInMilliseconds | int
+                {{ easingType }} easing type with {{ delayInMilliseconds | int(0)
                 }} ms delay. remainingTimeInMilliseconds = {{
                 remainingTimeInMilliseconds | round(0) }}, and
                 absoluteBrightnessSpan = {{ absoluteBrightnessSpan }}
               level: warning
             action: system_log.write
-          - data_template:
+          - data:
               message: >
                 startBrightness = {{ startBrightness }}, endBrightness = {{
                 endBrightness }}, and processingDelayInMilliseconds = {{
-                processingDelayInMilliseconds | int }}
+                processingDelayInMilliseconds | int(0) }}
               level: warning
             action: system_log.write
   - repeat:
@@ -965,8 +960,8 @@ sequence:
               {% endif %}
             expectedBrightness: |
               {% if isBrightnessFadeEnabled %}
-                {% set startBrightness = startBrightness | int %}
-                {% set brightnessSpan = brightnessSpan | int %}
+                {% set startBrightness = startBrightness | int(0) %}
+                {% set brightnessSpan = brightnessSpan | int(0) %}
                 {% set easingAdjustedPercentageCompleted = easingAdjustedPercentageCompleted | float(0) %}
 
                 {% set calculatedBrightness = (startBrightness + (brightnessSpan * easingAdjustedPercentageCompleted)) | round(0) %}
@@ -989,8 +984,8 @@ sequence:
               {{ calculatedBrightness }}
             linearExpectedBrightness: |
               {% if isBrightnessFadeEnabled %}              
-                {% set startBrightness = startBrightness | int %}
-                {% set brightnessSpan = brightnessSpan | int %}
+                {% set startBrightness = startBrightness | int(0) %}
+                {% set brightnessSpan = brightnessSpan | int(0) %}
                 {% set percentageOfTimeCompleted = percentageOfTimeCompleted | float(0) %}
 
                 {% set calculatedBrightness = (startBrightness + (brightnessSpan * percentageOfTimeCompleted)) | round(0) %}
@@ -1017,7 +1012,7 @@ sequence:
               
                 {## If a light is off, its brightness will return "None"? So first check if there's a valid brightness before getting the value ##}
                 {% if rawLightLevel %}
-                	{% set currentLightLevel = rawLightLevel | int %}
+                	{% set currentLightLevel = rawLightLevel | int(0) %}
                 {% else %}
                 	{% set currentLightLevel = 0 %}
                 {% endif %}
@@ -1031,14 +1026,14 @@ sequence:
               {{ currentLightLevel }}
             expectedColorTemperature: |
               {% if isColorFadeEnabled %}
-                {% set startColorTemperature = startColorTemperature | int %}
-                {% set colorTemperatureSpan = colorTemperatureSpan | int %}
+                {% set startColorTemperature = startColorTemperature | int(0) %}
+                {% set colorTemperatureSpan = colorTemperatureSpan | int(0) %}
                 {% set easingAdjustedPercentageCompleted = easingAdjustedPercentageCompleted | float(0) %}
 
                 {% set calculatedColorTemperature = (startColorTemperature + (colorTemperatureSpan * easingAdjustedPercentageCompleted)) | round(0) %}
 
-                {% set minColorTemperatureKelvin = minColorTemperatureKelvin | int %}
-                {% set maxColorTemperatureKelvin = maxColorTemperatureKelvin | int %}
+                {% set minColorTemperatureKelvin = minColorTemperatureKelvin | int(0) %}
+                {% set maxColorTemperatureKelvin = maxColorTemperatureKelvin | int(0) %}
 
                 {% if (calculatedColorTemperature < minColorTemperatureKelvin) %}
                   {% set calculatedColorTemperature = minColorTemperatureKelvin %}
@@ -1067,7 +1062,7 @@ sequence:
                 {% if rawColorTemperature %}
 
                   {% if is_number(rawColorTemperature) %}
-                    {% set currentColorTemperature = rawColorTemperature | int %}
+                    {% set currentColorTemperature = rawColorTemperature | int(0) %}
                   {% endif %}
                 {% endif %}
               {% endif %}
@@ -1083,15 +1078,15 @@ sequence:
                   value_template: |
                     {{ 
                       (
-                        ( (currentBrightness | int) != (endBrightness | int) )
+                        ( (currentBrightness | int(0)) != (endBrightness | int(0)) )
                         and
-                        ( (currentBrightness | int) != (expectedBrightness | int) )
+                        ( (currentBrightness | int(0)) != (expectedBrightness | int(0)) )
                       )
                       or
                       (
-                        ( (currentColorTemperature | int) != (endColorTemperature | int) )
+                        ( (currentColorTemperature | int(0)) != (endColorTemperature | int(0)) )
                         and
-                        ( (currentColorTemperature | int) != (expectedColorTemperature | int) )
+                        ( (currentColorTemperature | int(0)) != (expectedColorTemperature | int(0)) )
                       )
                     }}
               then:
@@ -1153,14 +1148,14 @@ sequence:
                           value_template: |
                             {{ isColorFadeEnabled and isBrightnessFadeEnabled }}
                       then:
-                        - data_template:
+                        - data:
                             message: >
                               Set {{ lightFriendlyName }} to {{
-                              expectedBrightness | int }} brightness and {{
-                              expectedColorTemperature | int }}°K. (Linear
+                              expectedBrightness | int(0) }} brightness and {{
+                              expectedColorTemperature | int(0) }}°K. (Linear
                               brightness would have been {{
-                              linearExpectedBrightness | int }}.) Delay is {{
-                              delayInMilliseconds | int }} ms. Elapsed time is
+                              linearExpectedBrightness | int(0) }}.) Delay is {{
+                              delayInMilliseconds | int(0) }} ms. Elapsed time is
                               {{ (as_timestamp(now()) - startTimestamp) |
                               round(2) }} seconds. (endBrightness is {{
                               endBrightness}} and endColorTemperature is {{
@@ -1173,9 +1168,9 @@ sequence:
                   value_template: |
                     {{ isBrightnessFadeEnabled and 
                       (
-                        ( (currentBrightness | int) != (endBrightness | int) ) 
+                        ( (currentBrightness | int(0)) != (endBrightness | int(0)) ) 
                         and
-                        ( (currentBrightness | int) != (expectedBrightness | int) ) 
+                        ( (currentBrightness | int(0)) != (expectedBrightness | int(0)) ) 
                       )
                       }}
               then:
@@ -1228,12 +1223,11 @@ sequence:
                       value_template: |
                         {{ isDebugMode }}
                   then:
-                    - data_template:
+                    - data:
                         message: >
-                          Set {{ lightFriendlyName }} to {{ expectedBrightness |
-                          int }} brightness. (Linear brightness would have been
-                          {{ linearExpectedBrightness | int }}.) Delay is {{
-                          delayInMilliseconds | int }} ms. Elapsed time is {{
+                          Set {{ lightFriendlyName }} to {{ expectedBrightness | int(0) }} brightness. (Linear brightness would have been
+                          {{ linearExpectedBrightness | int(0) }}.) Delay is {{
+                          delayInMilliseconds | int(0) }} ms. Elapsed time is {{
                           (as_timestamp(now()) - startTimestamp) | round(2) }}
                           seconds. (endBrightness is {{ endBrightness}}.)
                         level: warning
@@ -1244,9 +1238,9 @@ sequence:
                       value_template: |
                         {{ isColorFadeEnabled and 
                           (
-                            ( (currentColorTemperature | int) != (endColorTemperature | int) ) 
+                            ( (currentColorTemperature | int(0)) != (endColorTemperature | int(0)) ) 
                             and
-                            ( (currentColorTemperature | int) != (expectedColorTemperature | int) ) 
+                            ( (currentColorTemperature | int(0)) != (expectedColorTemperature | int(0)) ) 
                           )
                         }}
                   then:
@@ -1274,11 +1268,11 @@ sequence:
                           value_template: |
                             {{ isDebugMode }}
                       then:
-                        - data_template:
+                        - data:
                             message: >
                               Set {{ lightFriendlyName }} to {{
-                              expectedColorTemperature | int }}°K. Delay is {{
-                              delayInMilliseconds | int }} ms. Elapsed time is
+                              expectedColorTemperature | int(0) }}°K. Delay is {{
+                              delayInMilliseconds | int(0) }} ms. Elapsed time is
                               {{ (as_timestamp(now()) - startTimestamp) |
                               round(2) }} seconds. (endColorTemperature is {{
                               endColorTemperature}}.)
@@ -1318,7 +1312,7 @@ sequence:
                       value_template: |
                         {{ isDebugMode }}
                   then:
-                    - data_template:
+                    - data:
                         message: |
                           {{ stopMessage }}
                         level: warning
@@ -1336,7 +1330,7 @@ sequence:
                       value_template: |
                         {{ isDebugMode }}
                   then:
-                    - data_template:
+                    - data:
                         message: |
                           {{ stopMessage }}
                         level: warning
@@ -1354,7 +1348,7 @@ sequence:
                 {## If a light is off, its brightness will return 'None'. So first check if there's a valid brightness before getting the value ##}
               
                 {% if rawLightLevel %}
-                	{% set currentLightLevel = rawLightLevel | int %}
+                	{% set currentLightLevel = rawLightLevel | int(0) %}
                 {% else %}
                 	{% set currentLightLevel = 0 %}
                 {% endif %}
@@ -1365,12 +1359,12 @@ sequence:
                 {{ currentLightLevel }}
               {% endif %}
             brightnessDifferenceFromExpected: >
-              {{ ( (currentBrightness | int) - (expectedBrightness | int) ) |
+              {{ ( (currentBrightness | int(0)) - (expectedBrightness | int(0)) ) |
               abs }}
             isBrightnessDifferenceAboveAutoCancelThreshold: >
               {% if shouldAutoCancelTheFadeIfTheLampBrightnessIsManuallyChanged
               %}
-                {{ (brightnessDifferenceFromExpected | int) >= (normalizedAutoCancelThreshold | int) }}
+                {{ (brightnessDifferenceFromExpected | int(0)) >= (normalizedAutoCancelThreshold | int(0)) }}
               {% else %}
                 {{ false }}
               {% endif %}
@@ -1385,7 +1379,7 @@ sequence:
                          shouldStopIfTheLampIsTurnedOffDuringTheFade
                         )
                      )
-                     and ( ((expectedBrightness | int) > 0) and ((currentBrightness | int) == 0) )
+                     and ( ((expectedBrightness | int(0)) > 0) and ((currentBrightness | int(0)) == 0) )
                    ) 
                   }}
           then:
@@ -1401,7 +1395,7 @@ sequence:
                   value_template: |
                     {{ isDebugMode }}
               then:
-                - data_template:
+                - data:
                     message: |
                       {{ stopMessage }}
                     level: warning
@@ -1442,7 +1436,7 @@ sequence:
                   value_template: |
                     {{ isDebugMode }}
               then:
-                - data_template:
+                - data:
                     message: |
                       {{ stopMessage }}
                     level: warning
@@ -1463,7 +1457,7 @@ sequence:
             
                 {## If a light is off, its brightness will return "None"? So first check if there's a valid brightness before getting the value ##}
                 {% if rawLightLevel %}
-                	{% set currentLightLevel = rawLightLevel | int %}
+                	{% set currentLightLevel = rawLightLevel | int(0) %}
                 {% else %}
                 	{% set currentLightLevel = 0 %}
                 {% endif %}
@@ -1490,7 +1484,7 @@ sequence:
                 {% if rawColorTemperature %}
             
                   {% if is_number(rawColorTemperature) %}
-                    {% set currentColorTemperature = rawColorTemperature | int %}
+                    {% set currentColorTemperature = rawColorTemperature | int(0) %}
                   {% endif %}
                 {% endif %}
             
@@ -1514,7 +1508,7 @@ sequence:
         
         {## If a light is off, its brightness will return 'None'. So first check if there's a valid brightness before getting the value ##}
         {% if rawLightLevel %}
-        	{% set currentLightLevel = rawLightLevel | int %}
+        	{% set currentLightLevel = rawLightLevel | int(0) %}
         {% else %}
         	{% set currentLightLevel = 0 %}
         {% endif %}
@@ -1524,10 +1518,10 @@ sequence:
         
         {{ currentLightLevel }}
       brightnessDifferenceFromExpected: |
-        {{ ( (currentBrightness | int) - (endBrightness | int) ) | abs }}
+        {{ ( (currentBrightness | int(0)) - (endBrightness | int(0)) ) | abs }}
       isBrightnessDifferenceAboveAutoCancelThreshold: |
         {% if shouldAutoCancelTheFadeIfTheLampBrightnessIsManuallyChanged %}
-          {{ (brightnessDifferenceFromExpected | int) > (normalizedAutoCancelThreshold | int) }}
+          {{ (brightnessDifferenceFromExpected | int(0)) > (normalizedAutoCancelThreshold | int(0)) }}
         {% else %}
           {{ false }}
         {% endif %}
@@ -1540,7 +1534,7 @@ sequence:
           {% if rawColorTemperature %}
 
             {% if is_number(rawColorTemperature) %}
-              {% set currentColorTemperature = rawColorTemperature | int %}
+              {% set currentColorTemperature = rawColorTemperature | int(0) %}
             {% endif %}
           {% endif %}
         {% endif %}
@@ -1557,7 +1551,7 @@ sequence:
               (
                 (not (shouldStopIfTheLampIsTurnedOffDuringTheFade is defined)) or
                 (not shouldStopIfTheLampIsTurnedOffDuringTheFade) or
-                ((currentBrightness | int) != 0)
+                ((currentBrightness | int(0)) != 0)
               )
               }}
     then:
@@ -1567,8 +1561,8 @@ sequence:
               {{ isColorFadeEnabled and isBrightnessFadeEnabled 
               and
               (
-                (isBrightnessFadeEnabled and ((currentBrightness | int) != (endBrightness | int)) )
-                or (isColorFadeEnabled and ((currentColorTemperature | int) != (endColorTemperature | int)) )
+                (isBrightnessFadeEnabled and ((currentBrightness | int(0)) != (endBrightness | int(0))) )
+                or (isColorFadeEnabled and ((currentColorTemperature | int(0)) != (endColorTemperature | int(0))) )
               )
               }}
         then:
@@ -1596,8 +1590,8 @@ sequence:
           - if:
               - condition: template
                 value_template: >
-                  {{ isBrightnessFadeEnabled and ((currentBrightness | int) !=
-                  (endBrightness | int)) }}
+                  {{ isBrightnessFadeEnabled and ((currentBrightness | int(0)) !=
+                  (endBrightness | int(0))) }}
             then:
               - if:
                   - condition: template
@@ -1621,8 +1615,8 @@ sequence:
               - if:
                   - condition: template
                     value_template: >
-                      {{ isColorFadeEnabled and ((currentColorTemperature | int)
-                      != (endColorTemperature | int)) }}
+                      {{ isColorFadeEnabled and ((currentColorTemperature | int(0))
+                      != (endColorTemperature | int(0))) }}
                 then:
                   - target:
                       entity_id: "{{ light }}"
@@ -1640,10 +1634,10 @@ sequence:
                 value_template: |
                   {{ isColorFadeEnabled and isBrightnessFadeEnabled }}
             then:
-              - data_template:
+              - data:
                   message: >
-                    Set {{ lightFriendlyName }} to {{ endBrightness | int }}
-                    brightness and {{ endColorTemperature | int }}°K. Elapsed
+                    Set {{ lightFriendlyName }} to {{ endBrightness | int(0) }}
+                    brightness and {{ endColorTemperature | int(0) }}°K. Elapsed
                     time is {{ (as_timestamp(now()) - startTimestamp) | round(2)
                     }} seconds.
                   level: warning
@@ -1654,9 +1648,9 @@ sequence:
                     value_template: |
                       {{ isBrightnessFadeEnabled }}
                 then:
-                  - data_template:
+                  - data:
                       message: >
-                        Set {{ lightFriendlyName }} to {{ endBrightness | int }}
+                        Set {{ lightFriendlyName }} to {{ endBrightness | int(0) }}
                         brightness. Elapsed time is {{ (as_timestamp(now()) -
                         startTimestamp) | round(2) }} seconds.
                       level: warning
@@ -1667,10 +1661,10 @@ sequence:
                         value_template: |
                           {{ isColorFadeEnabled }}
                     then:
-                      - data_template:
+                      - data:
                           message: >
                             Set {{ lightFriendlyName }} to {{
-                            endColorTemperature | int }}°K. Elapsed time is {{
+                            endColorTemperature | int(0) }}°K. Elapsed time is {{
                             (as_timestamp(now()) - startTimestamp) | round(2) }}
                             seconds.
                           level: warning
