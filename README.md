@@ -8,5 +8,5 @@
   This is the most recent version + some changes:
     - have defaults for ints and floats
     - replace `data_template` with `data`
-    - sometimes we fail to connect with the device in the script, so adde `continue_on_error: true` everywhere
+    - sometimes we fail to connect with the device in the script, so added `continue_on_error: true` everywhere
     - ran the script through gemini to check formatting and errors

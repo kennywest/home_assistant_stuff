@@ -1,8 +1,28 @@
 alias: Ashley’s Light Fader
 description: >
+  ## Description
+  
   Fades a lamp over time. If you have any questions or comments about this
   script, feel free to tweet Ashley Bischoff at @FriendlyAshley. Released under
-  the Apache 2.0 license. (v2.01)
+  the Apache 2.0 license. (v2.02)
+  
+  ## Script origins
+  
+  Taken from the original script you can find here: https://gist.github.com/handcoding/c2fe8a9e895262cefbee886e0019cada
+  Referring to original post linking to this script here: https://community.home-assistant.io/t/ashley-s-light-fader-2-01-fade-lights-and-or-color-temperature-with-your-choice-of-easing-curves-including-ease-in-ease-out-and-ease-in-out/584077
+  
+  ## Changes in v2.02 compared to v2.01:
+
+  - Added `continue_on_error: true` to all actions. This ensures that if the connection to a device is temporarily lost,
+    the script continues running instead of stopping.
+
+  - Ran the script through Gemini to address the following:
+    + Converted `data-template` to `data`.
+    + Made some minor template code improvements.
+    + Applied some formatting changes.
+    + Ensured that numeric values (floats and integers) default to 0 instead of being undefined.
+    + Replaced manual subtraction with bitwise math where appropriate.
+
 fields:
   light:
     name: 💡 Light
